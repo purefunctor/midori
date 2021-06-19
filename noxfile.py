@@ -40,7 +40,7 @@ def test(session: nox.Session):
     session.install("pytest", "pytest_mock", "coverage[toml]", ".")
 
     try:
-        session.run("coverage", "run", "--branch", "-m", "pytest", *args)
+        session.run("coverage", "run", "--branch", "--parallel", "-m", "pytest", *args)
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
