@@ -1,3 +1,4 @@
+"""Nox Configuration."""
 import os
 from pathlib import Path
 import shutil
@@ -6,7 +7,8 @@ import nox_poetry as nox
 
 
 @nox.session(name="pre-commit", python="3.9")
-def pre_commit(session: nox.Session):
+def pre_commit(session: nox.Session) -> None:
+    """Run pre-commit hooks excluding flake8."""
     env = {"SKIP": "flake8"}
 
     session.install("pre-commit")
@@ -15,7 +17,8 @@ def pre_commit(session: nox.Session):
 
 
 @nox.session(python="3.9")
-def flake8(session: nox.Session):
+def flake8(session: nox.Session) -> None:
+    """Lint code using flake8."""
     session.install(
         "flake8",
         "flake8-annotations",
@@ -24,18 +27,22 @@ def flake8(session: nox.Session):
     )
 
     if os.getenv("GITHUB_ACTIONS"):
+        format = (
+            "::error file=%(path)s,line=%(row)d,col=%(col)d::[flake8] "
+            "%(code)s: %(text)s"
+        )
         session.run(
             "flake8",
-            "midori",
-            "tests",
-            "--format=::error file=%(path)s,line=%(row)d,col=%(col)d::[flake8] %(code)s: %(text)s",
+            f"--format={format}",
+            *session.posargs,
         )
     else:
-        session.run("flake8", "midori", "tests")
+        session.run("flake8", *session.posargs)
 
 
 @nox.session(python=["3.8", "3.9"])
-def test(session: nox.Session):
+def test(session: nox.Session) -> None:
+    """Generate test coverage data."""
     args = session.posargs or ["-vs"]
 
     session.install("pytest", "pytest_mock", "coverage[toml]", ".")
@@ -48,7 +55,8 @@ def test(session: nox.Session):
 
 
 @nox.session(name="coverage", python="3.9")
-def coverage(session: nox.Session):
+def coverage(session: nox.Session) -> None:
+    """Combine and report coverage data."""
     args = session.posargs or ["report"]
 
     if not session.posargs and any(Path().glob(".coverage.*")):
@@ -58,14 +66,16 @@ def coverage(session: nox.Session):
 
 
 @nox.session(name="mypy", python=["3.8", "3.9"])
-def mypy(session: nox.Session):
+def mypy(session: nox.Session) -> None:
+    """Type check code using mypy."""
     args = session.posargs or ["midori", "tests", "docs/conf.py"]
     session.install("mypy", "pytest", ".")
     session.run("mypy", *args)
 
 
 @nox.session(name="docs-build", python="3.9")
-def docs_build(session: nox.Session):
+def docs_build(session: nox.Session) -> None:
+    """Build documentation."""
     args = session.posargs or ["docs", "docs/_build"]
     session.install("sphinx", "sphinx-click", "sphinx-rtd-theme", ".")
 
