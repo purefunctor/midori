@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import nox_poetry as nox
 
@@ -35,5 +36,19 @@ def flake8(session: nox.Session):
 @nox.session(python=["3.8", "3.9"])
 def test(session: nox.Session):
     session.install("pytest", "pytest_mock", "coverage[toml]", ".")
-    session.run("coverage", "run", "--branch", "-m", "pytest", "-vs")
-    session.run("coverage", "report", "-m")
+
+    try:
+        session.run("coverage", "run", "--branch", "-m", "pytest", "-vs")
+    finally:
+        if session.interactive:
+            session.notify("coverage", posargs=[])
+
+
+@nox.session(name="coverage", python="3.9")
+def coverage(session: nox.Session):
+    args = session.posargs or ["report"]
+
+    if not session.posargs and any(Path().glob(".coverage.*")):
+        session.run("coverage", "combine")
+
+    session.run("coverage", *args)
