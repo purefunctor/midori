@@ -3,7 +3,7 @@ import os
 import nox_poetry as nox
 
 
-@nox.session(python="3.9")
+@nox.session(name="pre-commit", python="3.9")
 def pre_commit(session: nox.Session):
     env = {"SKIP": "flake8"}
 
