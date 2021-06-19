@@ -57,6 +57,13 @@ def coverage(session: nox.Session):
     session.run("coverage", *args)
 
 
+@nox.session(name="mypy", python=["3.8", "3.9"])
+def mypy(session: nox.Session):
+    args = session.posargs or ["midori", "tests", "docs/conf.py"]
+    session.install("mypy", "pytest", ".")
+    session.run("mypy", *args)
+
+
 @nox.session(name="docs-build", python="3.9")
 def docs_build(session: nox.Session):
     args = session.posargs or ["docs", "docs/_build"]
