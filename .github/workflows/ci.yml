@@ -66,7 +66,7 @@ jobs:
         run: pip install --constraint=.github/workflows/constraints.txt coveralls coverage[toml] nox-poetry poetry
 
       - name: Download coverage data
-        uses: actions/download-artifact@v2.0.9
+        uses: actions/download-artifact@v2.0.10
         with:
           name: coverage-data
 
