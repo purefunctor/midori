@@ -23,18 +23,10 @@ pre-commit = "^2.13.0"
 pytest = "^6.2.4"
 pytest-mock = "^3.6.1"
 sphinx-rtd-theme = "^0.5.2"
-taskipy = "^1.8.1"
 
 [tool.coverage.run]
 source = ["midori"]
 omit = ["*tests*"]
-
-[tool.taskipy.tasks]
-format = "black midori"
-lint = "pre-commit run --all-files"
-test = "coverage run --branch -m pytest && coverage report && coverage html"
-type = "mypy midori tests"
-pre-commit = "pre-commit install"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
