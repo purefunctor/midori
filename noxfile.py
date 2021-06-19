@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 
 import nox_poetry as nox
 
@@ -54,3 +55,15 @@ def coverage(session: nox.Session):
         session.run("coverage", "combine")
 
     session.run("coverage", *args)
+
+
+@nox.session(name="docs-build", python="3.9")
+def docs_build(session: nox.Session):
+    args = session.posargs or ["docs", "docs/_build"]
+    session.install("sphinx", "sphinx-click", "sphinx-rtd-theme", ".")
+
+    build_dir = Path("docs", "_build")
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    session.run("sphinx-build", *args)
