@@ -84,3 +84,16 @@ def docs_build(session: nox.Session) -> None:
         shutil.rmtree(build_dir)
 
     session.run("sphinx-build", *args)
+
+
+@nox.session(name="docs-live", python="3.9")
+def docs_live(session: nox.Session) -> None:
+    """Build documentation with live reloading."""
+    args = session.posargs or ["--open-browser", "docs", "docs/_build"]
+    session.install("sphinx", "sphinx-autobuild", "sphinx-rtd-theme", ".")
+
+    build_dir = Path("docs", "_build")
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    session.run("sphinx-autobuild", *args)
