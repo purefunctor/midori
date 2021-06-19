@@ -6,5 +6,6 @@
    :hidden:
    :maxdepth: 1
 
+   reference
    changelog
    License <license>

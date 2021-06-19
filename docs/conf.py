@@ -11,4 +11,5 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented"
 html_theme = "sphinx_rtd_theme"
