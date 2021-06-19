@@ -20,6 +20,8 @@ jobs:
           - { python-version: 3.9, session: "test", os: "ubuntu-latest" }
           - { python-version: 3.8, session: "mypy", os: "ubuntu-latest" }
           - { python-version: 3.9, session: "mypy", os: "ubuntu-latest" }
+          - { python-version: 3.9, session: "test", os: "macos-latest" }
+          - { python-version: 3.9, session: "test", os: "windows-latest" }
           - { python-version: 3.9, session: "pre-commit", os: "ubuntu-latest" }
           - { python-version: 3.9, session: "flake8", os: "ubuntu-latest" }
 
