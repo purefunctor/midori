@@ -99,7 +99,7 @@ def mypy(session: Session) -> None:
 def docs_build(session: Session) -> None:
     """Build documentation."""
     args = session.posargs or ["docs", "docs/_build"]
-    session.install("sphinx", "sphinx-click", "sphinx-rtd-theme", ".")
+    session.install("sphinx", "sphinx-rtd-theme", ".")
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():
