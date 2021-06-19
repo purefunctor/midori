@@ -34,7 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install Tools
-        run: pip install coverage[toml] nox-poetry poetry
+        run: pip install --constraint=.github/workflows/constraints.txt coverage[toml] nox-poetry poetry
 
       - name: Run Nox
         run: nox --force-color --python=${{ matrix.python-version }}
@@ -59,7 +59,7 @@ jobs:
           python-version: 3.9
 
       - name: Install Tools
-        run: pip install coveralls coverage[toml] nox-poetry poetry
+        run: pip install --constraint=.github/workflows/constraints.txt coveralls coverage[toml] nox-poetry poetry
 
       - name: Download coverage data
         uses: actions/download-artifact@v2.0.9
