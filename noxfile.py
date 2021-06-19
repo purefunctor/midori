@@ -35,10 +35,12 @@ def flake8(session: nox.Session):
 
 @nox.session(python=["3.8", "3.9"])
 def test(session: nox.Session):
+    args = session.posargs or ["-vs"]
+
     session.install("pytest", "pytest_mock", "coverage[toml]", ".")
 
     try:
-        session.run("coverage", "run", "--branch", "-m", "pytest", "-vs")
+        session.run("coverage", "run", "--branch", "-m", "pytest", *args)
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
