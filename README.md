@@ -1,0 +1,2 @@
+# midori
+Spotify API wrapper.
