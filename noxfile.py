@@ -3,7 +3,7 @@ import os
 import nox_poetry as nox
 
 
-@nox.session
+@nox.session(python="3.9")
 def pre_commit(session: nox.Session):
     env = {"SKIP": "flake8"}
 
@@ -12,7 +12,7 @@ def pre_commit(session: nox.Session):
     session.run("pre-commit", "run", "--all-files", env=env)
 
 
-@nox.session
+@nox.session(python="3.9")
 def flake8(session: nox.Session):
     session.install(
         "flake8",
