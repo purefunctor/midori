@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: ${{ matrix.session }} ${{ matrix.python-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { python-version: 3.8, session: "test", os: "ubuntu-latest" }
+          - { python-version: 3.9, session: "test", os: "ubuntu-latest" }
+          - { python-version: 3.8, session: "mypy", os: "ubuntu-latest" }
+          - { python-version: 3.9, session: "mypy", os: "ubuntu-latest" }
+          - { python-version: 3.9, session: "test", os: "macos-latest" }
+          - { python-version: 3.9, session: "test", os: "windows-latest" }
+          - { python-version: 3.9, session: "pre-commit", os: "ubuntu-latest" }
+          - { python-version: 3.9, session: "flake8", os: "ubuntu-latest" }
+
+    env:
+      NOXSESSION: ${{ matrix.session }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Tools
+        run: pip install --constraint=.github/workflows/constraints.txt coverage[toml] nox-poetry poetry
+
+      - name: Run Nox
+        run: nox --force-color --python=${{ matrix.python-version }}
+
+      - name: Upload coverage data
+        if: always() && matrix.session == 'test'
+        uses: "actions/upload-artifact@v2.2.3"
+        with:
+          name: coverage-data
+          path: ".coverage.*"
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Python 3.9
+        uses: actions/setup-python@v2.2.2
+        with:
+          python-version: 3.9
+
+      - name: Install Tools
+        run: pip install --constraint=.github/workflows/constraints.txt coveralls coverage[toml] nox-poetry poetry
+
+      - name: Download coverage data
+        uses: actions/download-artifact@v2.0.9
+        with:
+          name: coverage-data
+
+      - name: Combine coverage data
+        run: nox --force-color --session=coverage
+
+      - name: Upload to Coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: coveralls --service=github
