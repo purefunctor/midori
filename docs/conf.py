@@ -7,6 +7,7 @@ author = "PureFunctor"
 copyright = f"{datetime.now().year}, {author}"
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx_rtd_theme",
 ]

@@ -32,6 +32,11 @@ omit = ["*tests*"]
 
 [tool.coverage.report]
 show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
