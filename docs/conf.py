@@ -9,8 +9,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    "sphinx_rtd_theme",
 ]
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented"
-html_theme = "sphinx_rtd_theme"
+html_theme = "insegel"
