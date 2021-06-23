@@ -4,5 +4,5 @@ max-line-length=88
 max-doc-length=72
 ignore = ANN101,ANN102
 import-order-style = google
-application-import-names = stlt
+application-import-names = midori
 docstring-convention = numpy

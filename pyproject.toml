@@ -31,7 +31,11 @@ source = ["midori"]
 omit = ["*tests*"]
 
 [tool.coverage.report]
+ignore_errors = true
 show_missing = true
+
+[tool.mypy]
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
