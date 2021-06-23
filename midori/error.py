@@ -15,3 +15,7 @@ class InvalidAuthState(MidoriError):
 
     def __str__(self) -> str:  # noqa: D105
         return f"Invalid state: '{self.previous}' != '{self.current}'"
+
+
+class InvalidRedirectUri(MidoriError):
+    """Invalid redirect uri for the local server."""
