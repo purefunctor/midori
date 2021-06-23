@@ -31,6 +31,7 @@ source = ["midori"]
 omit = ["*tests*"]
 
 [tool.coverage.report]
+ignore_errors = true
 show_missing = true
 
 [tool.mypy]

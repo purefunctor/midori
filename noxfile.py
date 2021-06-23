@@ -79,7 +79,7 @@ def test(session: Session) -> None:
 @session(name="coverage", python="3.9")
 def coverage(session: Session) -> None:
     """Combine and report coverage data."""
-    args = session.posargs or ["report", "-i"]
+    args = session.posargs or ["report"]
 
     session.install("coverage[toml]")
 
