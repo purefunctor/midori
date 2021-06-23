@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from http.server import HTTPServer
 from io import BytesIO, StringIO
-from unittest.mock import Mock
+from typing import Any
 
 from pytest import CaptureFixture, raises
 from pytest_mock import MockerFixture
@@ -20,10 +20,10 @@ class _TestAuthClient(ABC):
     """Base class for tests against authentication clients."""
 
     @abstractmethod
-    def _create_client(self, mocker: MockerFixture) -> Mock:
+    def _create_client(self, mocker: MockerFixture) -> Any:
         """Create a mocked client."""
 
-    def create_client(self, mocker: MockerFixture) -> Mock:
+    def create_client(self, mocker: MockerFixture) -> Any:
         """Mock dependencies and create a client."""
         _client = mocker.Mock()
         _client.create_authorization_url.return_value = ("URI", "STATE")
@@ -36,7 +36,7 @@ class _TestAuthClient(ABC):
 class TestAuthClient(_TestAuthClient):
     """Tests for the base authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> AuthClient:
+    def _create_client(self, mocker: MockerFixture) -> Any:
         """Create a mocked client."""
 
         class _AuthClient(AuthClient):
@@ -80,7 +80,7 @@ class TestAuthClient(_TestAuthClient):
 class TestLocalAuthClient(_TestAuthClient):
     """Tests for the local authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> LocalAuthClient:
+    def _create_client(self, mocker: MockerFixture) -> Any:
         return LocalAuthClient(
             client_id="CLIENT_ID",
             client_secret="CLIENT_SECRET",
@@ -156,7 +156,7 @@ class TestLocalAuthClient(_TestAuthClient):
 class TestConsoleAuthClient(_TestAuthClient):
     """Tests for the console authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> ConsoleAuthClient:
+    def _create_client(self, mocker: MockerFixture) -> Any:
         return ConsoleAuthClient(
             client_id="CLIENT_ID",
             client_secret="CLIENT_SECRET",
