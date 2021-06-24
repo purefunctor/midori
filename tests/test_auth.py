@@ -91,6 +91,15 @@ class TestAuthClient(_TestAuthClient):
 
         client._request_token.assert_called_once()
 
+    def test_refresh_token_calls_api_endpoint(self, mocker: MockerFixture) -> None:
+        """Test if the API endpoint is called."""
+        client = self.create_client(mocker)
+        client._client = mocker.Mock()
+
+        client.refresh_token(refresh_token="REFRESH_TOKEN")
+
+        client._client.post.assert_called_once()
+
 
 class TestLocalAuthClient(_TestAuthClient):
     """Tests for the local authentication client."""
