@@ -6,7 +6,6 @@ authors = ["PureFunctor <purefunctor@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-Authlib = "^0.15.4"
 attrs = "^21.2.0"
 cattrs = "^1.7.1"
 httpx = "^0.18.2"
