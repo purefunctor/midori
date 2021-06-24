@@ -107,9 +107,10 @@ class AuthClient(ABC):
                     "grant_type": "authorization_code",
                     "code": self._code,
                     "redirect_uri": self.redirect_uri,
-                    "client_id": self.client_id,
-                    "client_secret": self.client_secret,
                 },
+                headers={
+                    "Authorization": f"Basic {self._create_client_pair()}"
+                }
             )
 
         return response.json()
