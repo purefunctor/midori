@@ -86,10 +86,12 @@ class TestAuthClient(_TestAuthClient):
     def test_request_token_calls_implementation(self, mocker: MockerFixture) -> None:
         """Test if the implementation method is called."""
         client = self.create_client(mocker)
+        client._client = mocker.Mock()
 
         client.request_token()
 
         client._request_token.assert_called_once()
+        client._client.post.assert_called_once()
 
     def test_refresh_token_calls_api_endpoint(self, mocker: MockerFixture) -> None:
         """Test if the API endpoint is called."""
