@@ -82,3 +82,4 @@ class LocalAuthClient(AuthClient):
             server = self._open_server(host, port)
             webbrowser.open(self._uri)
             server.handle_request()
+            server.shutdown()
