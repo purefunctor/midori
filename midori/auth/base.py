@@ -1,5 +1,6 @@
 """Base class for authentication clients."""
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 import secrets
 import typing as t
 from urllib.parse import quote, urlencode
@@ -34,6 +35,7 @@ class AuthClient(ABC):
     _uri: str = attr.ib(init=False)
     _state: str = attr.ib(init=False)
     _code: t.Optional[str] = attr.ib(init=False, default=None)
+    _client: t.Optional[httpx.Client] = attr.ib(init=False, default=None)
 
     def __attrs_post_init__(self) -> None:
         """Initialize complex non-init fields."""
@@ -63,6 +65,18 @@ class AuthClient(ABC):
 
         self._code = code
 
+    @contextmanager
+    def _borrow_client(self) -> t.Iterator[httpx.Client]:
+        """Temporarily create a client or use the provided instance."""
+        client = httpx.Client()
+        try:
+            if self._client is None:
+                yield client
+            else:
+                yield self._client
+        finally:
+            client.close()
+
     @abstractmethod
     def _request_token(self) -> None:
         """Request a token from the API."""
@@ -71,7 +85,7 @@ class AuthClient(ABC):
         """Request a token from the API."""
         self._request_token()
 
-        with httpx.Client() as client:
+        with self._borrow_client() as client:
             response = client.post(
                 "https://accounts.spotify.com/api/token",
                 data={
@@ -82,4 +96,5 @@ class AuthClient(ABC):
                     "client_secret": self.client_secret,
                 },
             )
-            return response.json()
+
+        return response.json()
