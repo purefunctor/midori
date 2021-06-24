@@ -126,8 +126,8 @@ class TestLocalAuthClient(_TestAuthClient):
         client.redirect_uri = "http://localhost:8080"
 
         server = mocker.Mock(spec=HTTPServer)
-        mocker.patch("midori.auth.HTTPServer", return_value=server)
-        ARH = mocker.patch("midori.auth.AuthRequestHandler")
+        mocker.patch("midori.auth.local.HTTPServer", return_value=server)
+        ARH = mocker.patch("midori.auth.local.AuthRequestHandler")
         webbrowser_open = mocker.patch("webbrowser.open")
 
         client._request_token()
