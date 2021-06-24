@@ -37,10 +37,10 @@ class AuthClient(ABC):
         the selected scopes for the application
     """
 
-    client_id: str = attr.field()
-    client_secret: str = attr.field()
-    redirect_uri: str = attr.field()
-    scope: str = attr.field()
+    client_id: str = attr.ib(kw_only=True)
+    client_secret: str = attr.ib(kw_only=True)
+    redirect_uri: str = attr.ib(kw_only=True)
+    scope: str = attr.ib(kw_only=True)
 
     _uri: str = attr.ib(init=False)
     _state: str = attr.ib(init=False)
