@@ -62,7 +62,6 @@ class AuthClient(ABC):
             raise InvalidAuthState(self._state, state)
 
         self._code = code
-        self._state = state
 
     @abstractmethod
     def _request_token(self) -> None:
