@@ -4,12 +4,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import secrets
 import typing as t
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 import webbrowser
 
 import attr
-from authlib.integrations.httpx_client import OAuth2Client
+import httpx
 
 from midori.error import InvalidAuthState, InvalidRedirectUri
 
@@ -79,23 +80,30 @@ class AuthClient(ABC):
     redirect_uri: str = attr.field()
     scope: str = attr.field()
 
-    _client: OAuth2Client = attr.ib(init=False)
     _uri: str = attr.ib(init=False)
     _state: str = attr.ib(init=False)
     _code: t.Optional[str] = attr.ib(init=False, default=None)
 
     def __attrs_post_init__(self) -> None:
         """Initialize complex non-init fields."""
-        self._client = OAuth2Client(
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            scope=self.scope,
-            redirect_uri=self.redirect_uri,
+        self._uri, self._state = self._create_auth_url()
+
+    def _create_auth_url(self) -> t.Tuple[str, str]:
+        state = secrets.token_urlsafe()
+
+        parameters = urlencode(
+            {
+                "client_id": self.client_id,
+                "response_type": "code",
+                "redirect_uri": self.redirect_uri,
+                "scope": quote(self.scope),
+                "state": state,
+            }
         )
 
-        self._uri, self._state = self._client.create_authorization_url(
-            "https://accounts.spotify.com/authorize",
-        )
+        url = f"https://accounts.spotify.com/authorize?{parameters}"
+
+        return url, state
 
     def _set_code_state(self, code: str, state: str) -> None:
         """Set the code and state."""
@@ -113,12 +121,18 @@ class AuthClient(ABC):
         """Request a token from the API."""
         self._request_token()
 
-        return self._client.fetch_token(
-            "https://accounts.spotify.com/api/token",
-            grant_type="authorization_code",
-            code=self._code,
-            state=self._state,
-        )
+        with httpx.Client() as client:
+            response = client.post(
+                "https://accounts.spotify.com/api/token",
+                data={
+                    "grant_type": "authorization_code",
+                    "code": self._code,
+                    "redirect_uri": self.redirect_uri,
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                },
+            )
+            return response.json()
 
 
 class LocalAuthClient(AuthClient):
