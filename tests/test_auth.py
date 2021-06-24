@@ -20,23 +20,14 @@ class _TestAuthClient(ABC):
     """Base class for tests against authentication clients."""
 
     @abstractmethod
-    def _create_client(self, mocker: MockerFixture) -> Any:
-        """Create a mocked client."""
-
     def create_client(self, mocker: MockerFixture) -> Any:
-        """Mock dependencies and create a client."""
-        _client = mocker.Mock()
-        _client.create_authorization_url.return_value = ("URI", "STATE")
-
-        mocker.patch("midori.auth.OAuth2Client", return_value=_client)
-
-        return self._create_client(mocker)
+        """Create a mocked client."""
 
 
 class TestAuthClient(_TestAuthClient):
     """Tests for the base authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> Any:
+    def create_client(self, mocker: MockerFixture) -> Any:
         """Create a mocked client."""
 
         class _AuthClient(AuthClient):
@@ -55,16 +46,16 @@ class TestAuthClient(_TestAuthClient):
         """Test if code and state is set."""
         client = self.create_client(mocker)
 
-        client._set_code_state("CODE", "STATE")
+        client._set_code_state("CODE", client._state)
 
         assert client._code == "CODE"
-        assert client._state == "STATE"
+        assert client._state == client._state
 
     def test_set_code_state_fails_on_invalid_state(self, mocker: MockerFixture) -> None:
         """Test if invalid states raise exceptions."""
         client = self.create_client(mocker)
 
-        with raises(InvalidAuthState, match=".* 'STATE' .* 'INVALID_STATE'"):
+        with raises(InvalidAuthState, match=f".* '{client._state}' .* 'INVALID_STATE'"):
             client._set_code_state("CODE", "INVALID_STATE")
 
     def test_request_token_calls_implementation(self, mocker: MockerFixture) -> None:
@@ -74,13 +65,13 @@ class TestAuthClient(_TestAuthClient):
         client.request_token()
 
         client._request_token.assert_called_once()
-        client._client.fetch_token.assert_called_once()
 
 
 class TestLocalAuthClient(_TestAuthClient):
     """Tests for the local authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> Any:
+    def create_client(self, mocker: MockerFixture) -> Any:
+        """Create a mocked client."""
         return LocalAuthClient(
             client_id="CLIENT_ID",
             client_secret="CLIENT_SECRET",
@@ -156,7 +147,8 @@ class TestLocalAuthClient(_TestAuthClient):
 class TestConsoleAuthClient(_TestAuthClient):
     """Tests for the console authentication client."""
 
-    def _create_client(self, mocker: MockerFixture) -> Any:
+    def create_client(self, mocker: MockerFixture) -> Any:
+        """Create a mocked client."""
         return ConsoleAuthClient(
             client_id="CLIENT_ID",
             client_secret="CLIENT_SECRET",
@@ -169,8 +161,10 @@ class TestConsoleAuthClient(_TestAuthClient):
     ) -> None:
         """Test if authentication is performed using the console."""
         client = self.create_client(mocker)
+
         mocker.patch(
-            "sys.stdin", StringIO("http://localhost:8080/?code=CODE&state=STATE")
+            "sys.stdin",
+            StringIO(f"http://localhost:8080/?code=CODE&state={client._state}"),
         )
 
         client._request_token()
@@ -182,7 +176,7 @@ class TestConsoleAuthClient(_TestAuthClient):
             "Enter the URL you were redirected to: "
         )
         assert client._code == "CODE"
-        assert client._state == "STATE"
+        assert client._state == client._state
 
 
 class TestAuthHandler:
