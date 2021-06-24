@@ -4,6 +4,7 @@ from http.server import HTTPServer
 from io import BytesIO, StringIO
 from typing import Any
 
+import httpx
 from pytest import CaptureFixture, raises
 from pytest_mock import MockerFixture
 
@@ -57,6 +58,30 @@ class TestAuthClient(_TestAuthClient):
 
         with raises(InvalidAuthState, match=f".* '{client._state}' .* 'INVALID_STATE'"):
             client._set_code_state("CODE", "INVALID_STATE")
+
+    def test_borrow_client_creates_and_closes_a_client(
+        self, mocker: MockerFixture
+    ) -> None:
+        """Test if a new client is made and closed."""
+        client = self.create_client(mocker)
+
+        with client._borrow_client() as c:
+            assert isinstance(c, httpx.Client)
+
+        assert c.is_closed
+
+    def test_borrow_client_returns_the_provided_client(
+        self, mocker: MockerFixture
+    ) -> None:
+        """Test if the provided client is yielded."""
+        client = self.create_client(mocker)
+        _client = mocker.Mock()
+        client._client = _client
+
+        with client._borrow_client() as c:
+            assert c is _client
+
+        _client.close.assert_not_called()
 
     def test_request_token_calls_implementation(self, mocker: MockerFixture) -> None:
         """Test if the implementation method is called."""
