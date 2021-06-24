@@ -1,5 +1,6 @@
 """Base class for authentication clients."""
 from abc import ABC, abstractmethod
+import base64
 from contextlib import contextmanager
 import secrets
 import typing as t
@@ -91,6 +92,10 @@ class AuthClient(ABC):
     def _request_token(self) -> None:
         """Request a token from the API."""
 
+    def _create_client_pair(self) -> str:
+        client_pair = f"{self.client_id}:{self.client_secret}".encode()
+        return base64.urlsafe_b64encode(client_pair).decode()
+
     def request_token(self) -> AuthInfo:
         """Request a token from the API."""
         self._request_token()
@@ -105,6 +110,22 @@ class AuthClient(ABC):
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
                 },
+            )
+
+        return response.json()
+
+    def refresh_token(self, *, refresh_token: str) -> t.Mapping:
+        """Refresh the access token."""
+        with self._borrow_client() as client:
+            response = client.post(
+                "https://accounts.spotify.com/api/token",
+                data={
+                    "grant_type": "refresh_token",
+                    "refresh_token": refresh_token,
+                },
+                headers={
+                    "Authorization": f"Basic {self._create_client_pair()}"
+                }
             )
 
         return response.json()
