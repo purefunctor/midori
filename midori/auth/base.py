@@ -11,6 +11,16 @@ import httpx
 from midori.error import InvalidAuthState
 
 
+class AuthInfo(t.TypedDict):
+    """Contains info needed for authorization."""
+
+    access_token: str
+    token_type: str
+    scope: str
+    expires_in: int
+    refresh_token: str
+
+
 @attr.s
 class AuthClient(ABC):
     """Base class for authentication.
@@ -81,7 +91,7 @@ class AuthClient(ABC):
     def _request_token(self) -> None:
         """Request a token from the API."""
 
-    def request_token(self) -> t.Mapping:
+    def request_token(self) -> AuthInfo:
         """Request a token from the API."""
         self._request_token()
 
