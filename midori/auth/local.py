@@ -8,11 +8,7 @@ from urllib.parse import urlparse
 import webbrowser
 
 from midori.auth.base import AuthClient
-from midori.auth.util import _parse_code_state
 from midori.error import InvalidRedirectUri
-
-
-CodeStateCallback = t.Callable[[str, str], None]
 
 
 class AuthRequestHandler(BaseHTTPRequestHandler):
@@ -21,10 +17,10 @@ class AuthRequestHandler(BaseHTTPRequestHandler):
     Attributes
     ----------
     _callback
-        a callback function that receives the `code` and `state`
+        a callback function that consumes the `callback` url
     """
 
-    _callback: t.Optional[CodeStateCallback] = None
+    _callback: t.Optional[t.Callable[[str], None]] = None
 
     def do_GET(self) -> None:
         """Handle GET requests."""
@@ -34,7 +30,7 @@ class AuthRequestHandler(BaseHTTPRequestHandler):
         self._write("<html><body><script>window.close()</script></body></html>")
 
         if self._callback is not None:
-            self._callback(*_parse_code_state(self.path))
+            self._callback(self.path)
 
     def _write(self, text: str) -> None:
         self.wfile.write(text.encode("utf-8"))
@@ -46,7 +42,7 @@ class AuthRequestHandler(BaseHTTPRequestHandler):
     @classmethod
     @contextmanager
     def hook_callback(
-        cls, callback: CodeStateCallback
+        cls, callback: t.Callable[[str], None],
     ) -> t.Iterator[t.Type[AuthRequestHandler]]:
         """Temporarily hook a callback."""
         try:
@@ -75,11 +71,10 @@ class LocalAuthClient(AuthClient):
     def _open_server(self, host: str, port: int) -> HTTPServer:
         return HTTPServer((host, port), AuthRequestHandler)
 
-    def _request_token(self) -> None:
+    def _visit_auth_url(self) -> None:
         """Request a token from the API using a browser."""
         host, port = self._parse_redirect()
-        with AuthRequestHandler.hook_callback(self._set_code_state):
+        with AuthRequestHandler.hook_callback(self._consume_callback_url):
             server = self._open_server(host, port)
             webbrowser.open(self._uri)
             server.handle_request()
-            server.shutdown()

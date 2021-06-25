@@ -1,10 +1,10 @@
 """Base class for authentication clients."""
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import base64
 from contextlib import contextmanager
 import secrets
 import typing as t
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 
 import attr
 import httpx
@@ -22,9 +22,51 @@ class AuthInfo(t.TypedDict):
     refresh_token: str
 
 
+class _AuthClient(t.Protocol):
+    """An abstract blueprint for authentication clients.
+
+    Attributes
+    ----------
+    _uri
+        the url to be visited for authentication
+    _state
+        an invariant during the authentication flow
+    _code
+        an authorization code to exchange for an access token
+    """
+
+    _uri: str
+    _state: str
+    _code: str
+
+    def _consume_callback_url(self, url: str) -> None:
+        """Parse, validate, and consume the callback URL."""
+        parameters = parse_qs(urlparse(url).query)
+
+        code, = parameters["code"]
+        state, = parameters["state"]
+
+        if state != self._state:
+            raise InvalidAuthState(self._state, state)
+
+        self._code = code
+
+    @abstractmethod
+    def _visit_auth_url(self) -> None:
+        """Visit the authentication url."""
+
+    @abstractmethod
+    def request_token(self) -> AuthInfo:
+        """Request a token from the API."""
+
+    @abstractmethod
+    def refresh_token(self, *, refresh_token: str) -> AuthInfo:
+        """Refresh a token from the API."""
+
+
 @attr.s
-class AuthClient(ABC):
-    """Base class for authentication.
+class AuthClient(_AuthClient):
+    """Base class for synchronous authentication.
 
     Attributes
     ----------
@@ -43,17 +85,15 @@ class AuthClient(ABC):
     redirect_uri: str = attr.ib(kw_only=True)
     scope: str = attr.ib(kw_only=True)
 
+    _client: t.Optional[httpx.Client] = attr.ib(kw_only=True, default=None)
+
     _uri: str = attr.ib(init=False)
     _state: str = attr.ib(init=False)
-    _code: t.Optional[str] = attr.ib(init=False, default=None)
-    _client: t.Optional[httpx.Client] = attr.ib(init=False, default=None)
+    _code: str = attr.ib(init=False, default="")
 
     def __attrs_post_init__(self) -> None:
         """Initialize complex non-init fields."""
-        self._uri, self._state = self._create_auth_url()
-
-    def _create_auth_url(self) -> t.Tuple[str, str]:
-        state = secrets.token_urlsafe()
+        self._state = secrets.token_urlsafe()
 
         parameters = urlencode(
             {
@@ -61,20 +101,11 @@ class AuthClient(ABC):
                 "response_type": "code",
                 "redirect_uri": self.redirect_uri,
                 "scope": quote(self.scope),
-                "state": state,
+                "state": self._state,
             }
         )
 
-        url = f"https://accounts.spotify.com/authorize?{parameters}"
-
-        return url, state
-
-    def _set_code_state(self, code: str, state: str) -> None:
-        """Set the code and state."""
-        if self._state != state:
-            raise InvalidAuthState(self._state, state)
-
-        self._code = code
+        self._uri = f"https://accounts.spotify.com/authorize?{parameters}"
 
     @contextmanager
     def _borrow_client(self) -> t.Iterator[httpx.Client]:
@@ -88,45 +119,39 @@ class AuthClient(ABC):
         finally:
             client.close()
 
-    @abstractmethod
-    def _request_token(self) -> None:
-        """Request a token from the API."""
-
-    def _create_client_pair(self) -> str:
+    def _post_api_token(self, **data: t.Any) -> AuthInfo:
+        """Create a POST request to the accounts service."""
         client_pair = f"{self.client_id}:{self.client_secret}".encode()
-        return base64.urlsafe_b64encode(client_pair).decode()
+        authorization = base64.urlsafe_b64encode(client_pair).decode()
+
+        with self._borrow_client() as client:
+            response = client.post(
+                "https://accounts.spotify.com/api/token",
+                data=data,
+                headers={
+                    "Authorization": f"Basic {authorization}",
+                }
+            )
+
+        return response.json()
 
     def request_token(self) -> AuthInfo:
         """Request a token from the API."""
-        self._request_token()
+        self._visit_auth_url()
 
-        with self._borrow_client() as client:
-            response = client.post(
-                "https://accounts.spotify.com/api/token",
-                data={
-                    "grant_type": "authorization_code",
-                    "code": self._code,
-                    "redirect_uri": self.redirect_uri,
-                },
-                headers={
-                    "Authorization": f"Basic {self._create_client_pair()}"
-                }
-            )
+        return self._post_api_token(
+            grant_type="authorization_code",
+            code=self._code,
+            redirect_uri=self.redirect_uri,
+        )
 
-        return response.json()
+    def refresh_token(self, *, refresh_token: str) -> AuthInfo:
+        """Refresh a token from the API."""
+        auth_info = self._post_api_token(
+            grant_type="refresh_token",
+            refresh_token=refresh_token,
+        )
 
-    def refresh_token(self, *, refresh_token: str) -> t.Mapping:
-        """Refresh the access token."""
-        with self._borrow_client() as client:
-            response = client.post(
-                "https://accounts.spotify.com/api/token",
-                data={
-                    "grant_type": "refresh_token",
-                    "refresh_token": refresh_token,
-                },
-                headers={
-                    "Authorization": f"Basic {self._create_client_pair()}"
-                }
-            )
+        auth_info["refresh_token"] = refresh_token
 
-        return response.json()
+        return auth_info
