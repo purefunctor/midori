@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, quote, urlencode, urlparse
 import attr
 import httpx
 
+from midori.auth.cache import _AuthCache, InMemoryCache
 from midori.auth.common import AuthInfo
 from midori.error import InvalidAuthState
 
@@ -69,12 +70,16 @@ class AuthClient(_AuthClient):
         the URL to redirect to after authorization
     scope
         the selected scopes for the application
+    auth_cache
+        caches authorization credentials
     """
 
     client_id: str = attr.ib(kw_only=True)
     client_secret: str = attr.ib(kw_only=True)
     redirect_uri: str = attr.ib(kw_only=True)
     scope: str = attr.ib(kw_only=True)
+
+    auth_cache: _AuthCache = attr.ib(kw_only=True, factory=InMemoryCache)
 
     _client: t.Optional[httpx.Client] = attr.ib(kw_only=True, default=None)
 
@@ -130,19 +135,31 @@ class AuthClient(_AuthClient):
         """Request a token from the API."""
         self._visit_auth_url()
 
-        return self._post_api_token(
+        auth_info = self._post_api_token(
             grant_type="authorization_code",
             code=self._code,
             redirect_uri=self.redirect_uri,
         )
 
-    def refresh_token(self, *, refresh_token: str) -> AuthInfo:
+        self.auth_cache.save_auth(auth_info)
+
+        return auth_info
+
+    def refresh_token(self, *, refresh_token: str = None) -> AuthInfo:
         """Refresh a token from the API."""
+        if refresh_token is None:
+            _auth_info = self.auth_cache.read_auth()
+            _refresh_token = _auth_info["refresh_token"]
+        else:
+            _refresh_token = refresh_token
+
         auth_info = self._post_api_token(
             grant_type="refresh_token",
-            refresh_token=refresh_token,
+            refresh_token=_refresh_token,
         )
 
-        auth_info["refresh_token"] = refresh_token
+        auth_info["refresh_token"] = _refresh_token
+
+        self.auth_cache.save_auth(auth_info)
 
         return auth_info
