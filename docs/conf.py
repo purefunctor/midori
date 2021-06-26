@@ -11,4 +11,4 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 autodoc_typehints = "description"
-html_theme = "sphinx_rtd_theme"
+html_theme = "insegel"
