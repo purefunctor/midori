@@ -96,7 +96,6 @@ def test_request_token_saves_result_to_cache(
 
 def test_refresh_token_calls_the_api(client: Any, mocker: MockerFixture) -> None:
     """Test if the API is called when refreshing."""
-    client.request_token()
     client._post_api_token = mocker.MagicMock()
 
     client.refresh_token(refresh_token="REFRESH_TOKEN")
