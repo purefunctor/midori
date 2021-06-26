@@ -101,7 +101,7 @@ def mypy(session: Session) -> None:
 def docs_build(session: Session) -> None:
     """Build documentation."""
     args = session.posargs or ["docs", "docs/_build"]
-    session.install("sphinx", "sphinx-rtd-theme", ".")
+    session.install("sphinx", "insegel", ".")
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():
@@ -114,7 +114,7 @@ def docs_build(session: Session) -> None:
 def docs_live(session: nox.Session) -> None:
     """Build documentation with live reloading."""
     args = session.posargs or ["--open-browser", "docs", "docs/_build"]
-    session.install("sphinx", "sphinx-autobuild", "sphinx-rtd-theme", ".")
+    session.install("sphinx", "sphinx-autobuild", "insegel", ".")
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():
