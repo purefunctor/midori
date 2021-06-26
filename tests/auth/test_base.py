@@ -89,17 +89,3 @@ def test_refresh_token_calls_the_api(client: Any, mocker: MockerFixture) -> None
     client.refresh_token(refresh_token="REFRESH_TOKEN")
 
     client._post_api_token.assert_called_once()
-
-
-# class TestConsoleAuthClient(_TestAuthClient):
-#     """Tests for the console authentication client."""
-#
-#     def create_client( mocker: MockerFixture) -> Any:
-#         """Create a mocked client."""
-#         return ConsoleAuthClient(
-#             client_id="CLIENT_ID",
-#             client_secret="CLIENT_SECRET",
-#             redirect_uri="REDIRECT_URI",
-#             scope="SCOPE",
-#         )
-#
