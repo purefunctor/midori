@@ -5,7 +5,7 @@ import httpx
 from pytest import fixture, raises
 from pytest_mock import MockerFixture
 
-from midori.auth import AuthClient
+from midori.auth import AuthClient, InMemoryCache
 from midori.error import InvalidAuthState
 
 
@@ -81,6 +81,19 @@ def test_request_token_calls_visit_auth_url_and_post_api_token(
     client._post_api_token.assert_called_once()
 
 
+def test_request_token_saves_result_to_cache(
+    client: Any, mocker: MockerFixture
+) -> None:
+    """Test if requesting a token populates the auth cache."""
+    auth_info = {"access_token": "0"}
+    client.auth_cache = InMemoryCache()
+    client._post_api_token = mocker.MagicMock(return_value=auth_info)
+
+    client.request_token()
+
+    assert client.auth_cache.read_auth() == auth_info
+
+
 def test_refresh_token_calls_the_api(client: Any, mocker: MockerFixture) -> None:
     """Test if the API is called when refreshing."""
     client.request_token()
@@ -89,3 +102,32 @@ def test_refresh_token_calls_the_api(client: Any, mocker: MockerFixture) -> None
     client.refresh_token(refresh_token="REFRESH_TOKEN")
 
     client._post_api_token.assert_called_once()
+
+
+def test_refresh_token_uses_cached_refresh_token(
+    client: Any, mocker: MockerFixture
+) -> None:
+    """Test if the cached refresh token is used."""
+    client.auth_cache = InMemoryCache()
+    client.auth_cache.auth_info = {"refresh_token": "refresh_token"}  # type: ignore
+    client._post_api_token = mocker.MagicMock()
+
+    client.refresh_token()
+
+    assert client._post_api_token.call_args.kwargs["refresh_token"] == "refresh_token"
+
+
+def test_refresh_token_saves_result_to_cache(
+    client: Any, mocker: MockerFixture
+) -> None:
+    """Test if the refresh auth info is cached."""
+    pre_refresh = {"access_token": "0", "refresh_token": "refresh_token"}
+    mid_refresh = {"access_token": "1"}
+    post_refresh = {"access_token": "1", "refresh_token": "refresh_token"}
+    client.auth_cache = InMemoryCache()
+    client.auth_cache.auth_info = pre_refresh  # type: ignore
+    client._post_api_token = mocker.MagicMock(return_value=mid_refresh)
+
+    client.refresh_token(refresh_token="refresh_token")
+
+    assert client.auth_cache.read_auth() == post_refresh
