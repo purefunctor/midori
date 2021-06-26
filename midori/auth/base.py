@@ -9,17 +9,8 @@ from urllib.parse import parse_qs, quote, urlencode, urlparse
 import attr
 import httpx
 
+from midori.auth.common import AuthInfo
 from midori.error import InvalidAuthState
-
-
-class AuthInfo(t.TypedDict):
-    """Contains info needed for authorization."""
-
-    access_token: str
-    token_type: str
-    scope: str
-    expires_in: int
-    refresh_token: str
 
 
 class _AuthClient(t.Protocol):
